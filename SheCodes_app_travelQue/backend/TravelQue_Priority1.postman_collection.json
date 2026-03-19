@@ -1,0 +1,561 @@
+{
+  "info": {
+    "name": "TravelQue API - Priority 1",
+    "description": "Customer Form Link System + Customer Management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customer_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customer_id_2",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "1. Register Agent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    pm.environment.set(\"token\", pm.response.json().access_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"agent@travelque.com\",\n  \"password\": \"SecurePass123\",\n  \"full_name\": \"John Agent\",\n  \"role\": \"AGENT\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/signup",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "signup"]
+            }
+          }
+        },
+        {
+          "name": "2. Login Agent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.environment.set(\"token\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"agent@travelque.com\",\n  \"password\": \"SecurePass123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Customer Form Link",
+      "item": [
+        {
+          "name": "3. Generate Customer Form Link",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has customer_id\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('customer_id');",
+                  "});",
+                  "",
+                  "pm.environment.set(\"customer_id\", pm.response.json().customer_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agent_notes\": \"New customer from referral\",\n  \"initial_tier\": \"Standard\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/customers/generate-link",
+              "host": ["{{base_url}}"],
+              "path": ["customers", "generate-link"]
+            }
+          }
+        },
+        {
+          "name": "4. Check Form Status (Pending)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Status is pending\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('pending');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/customers/form/{{customer_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["customers", "form", "{{customer_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "5. Submit Customer Form",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Status is completed\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('completed');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"personal_info\": {\n    \"title\": \"Mr.\",\n    \"first_name\": \"Michael\",\n    \"last_name\": \"Chen\",\n    \"date_of_birth\": \"1985-05-15\",\n    \"gender\": \"Male\",\n    \"nationality\": \"United States\"\n  },\n  \"contact\": {\n    \"email\": \"michael.chen@email.com\",\n    \"phone_primary\": \"+1-555-0123\",\n    \"preferred_contact_method\": \"email\",\n    \"address\": {\n      \"street\": \"123 Main Street\",\n      \"apartment\": \"Apt 4B\",\n      \"city\": \"New York\",\n      \"state\": \"NY\",\n      \"postal_code\": \"10001\",\n      \"country\": \"United States\"\n    }\n  },\n  \"travel_documents\": {\n    \"passport\": {\n      \"number\": \"ABC123456\",\n      \"issuing_country\": \"United States\",\n      \"expiry_date\": \"2030-08-20\"\n    }\n  },\n  \"preferences\": {\n    \"airlines\": [\"United Airlines\", \"British Airways\"],\n    \"cabin_class\": \"Business\",\n    \"seat_preference\": \"Window\",\n    \"meal_preference\": \"Vegetarian\"\n  },\n  \"emergency_contact\": {\n    \"name\": \"Lisa Chen\",\n    \"relationship\": \"Spouse\",\n    \"phone\": \"+1-555-4567\",\n    \"email\": \"lisa.chen@email.com\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/customers/form/{{customer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["customers", "form", "{{customer_id}}"]
+            }
+          }
+        },
+        {
+          "name": "6. Check Form Status (Completed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Status is completed\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('completed');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/customers/form/{{customer_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["customers", "form", "{{customer_id}}", "status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Customer Management",
+      "item": [
+        {
+          "name": "8. List All Customers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has customers array\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('customers');",
+                  "    pm.expect(jsonData.customers).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/customers",
+              "host": ["{{base_url}}"],
+              "path": ["customers"]
+            }
+          }
+        },
+        {
+          "name": "9. Search Customers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/customers?search=Michael",
+              "host": ["{{base_url}}"],
+              "path": ["customers"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "Michael"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "11. Get Customer by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has complete data\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('personal_info');",
+                  "    pm.expect(jsonData).to.have.property('contact');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/customers/{{customer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["customers", "{{customer_id}}"]
+            }
+          }
+        },
+        {
+          "name": "12. Create Customer Manually",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.environment.set(\"customer_id_2\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"personal_info\": {\n    \"title\": \"Ms.\",\n    \"first_name\": \"Jane\",\n    \"last_name\": \"Doe\",\n    \"date_of_birth\": \"1990-03-15\",\n    \"gender\": \"Female\",\n    \"nationality\": \"United Kingdom\"\n  },\n  \"contact\": {\n    \"email\": \"jane.doe@email.com\",\n    \"phone_primary\": \"+44-7700-123456\",\n    \"preferred_contact_method\": \"email\",\n    \"address\": {\n      \"street\": \"123 Baker Street\",\n      \"city\": \"London\",\n      \"state\": \"Greater London\",\n      \"postal_code\": \"NW1 6XE\",\n      \"country\": \"United Kingdom\"\n    }\n  },\n  \"emergency_contact\": {\n    \"name\": \"John Doe\",\n    \"relationship\": \"Spouse\",\n    \"phone\": \"+44-7700-654321\"\n  },\n  \"classification\": {\n    \"tier\": \"Standard\",\n    \"customer_type\": \"Individual\",\n    \"source\": \"Website\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/customers",
+              "host": ["{{base_url}}"],
+              "path": ["customers"]
+            }
+          }
+        },
+        {
+          "name": "13. Update Customer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classification\": {\n    \"tier\": \"Gold\",\n    \"tags\": [\"VIP Treatment\"],\n    \"customer_type\": \"Individual\",\n    \"source\": \"Referral\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/customers/{{customer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["customers", "{{customer_id}}"]
+            }
+          }
+        },
+        {
+          "name": "14. Delete Customer",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/customers/{{customer_id_2}}",
+              "host": ["{{base_url}}"],
+              "path": ["customers", "{{customer_id_2}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Customer Notes",
+      "item": [
+        {
+          "name": "15. Add Customer Note",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Note ID generated\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.match(/^NOTE-/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Customer prefers morning flights and window seats\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/customers/{{customer_id}}/notes",
+              "host": ["{{base_url}}"],
+              "path": ["customers", "{{customer_id}}", "notes"]
+            }
+          }
+        },
+        {
+          "name": "16. Get Customer Notes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/customers/{{customer_id}}/notes",
+              "host": ["{{base_url}}"],
+              "path": ["customers", "{{customer_id}}", "notes"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Customer Communications",
+      "item": [
+        {
+          "name": "17. Log Communication",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Communication ID generated\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.match(/^COMM-/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"email\",\n  \"subject\": \"Booking Confirmation\",\n  \"direction\": \"outbound\",\n  \"status\": \"sent\",\n  \"notes\": \"Sent booking confirmation\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/customers/{{customer_id}}/communications",
+              "host": ["{{base_url}}"],
+              "path": ["customers", "{{customer_id}}", "communications"]
+            }
+          }
+        },
+        {
+          "name": "18. Get Customer Communications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/customers/{{customer_id}}/communications",
+              "host": ["{{base_url}}"],
+              "path": ["customers", "{{customer_id}}", "communications"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
